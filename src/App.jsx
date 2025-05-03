@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Comments from "./components/Comments";
 
 function App() {
@@ -25,7 +25,15 @@ function App() {
   const handleComment = (e) => {
     setCommentText(e.target.value);
   };
+  
+  useEffect(() => {
+    const storedData = localStorage.getItem('commentsData'); 
+    if(storedData) setCommentsData(JSON.parse(storedData)); 
+  }, []); 
 
+  useEffect(() => {
+       localStorage.setItem('commentsData', JSON.stringify(commentsData)); 
+  }, [commentsData]); 
   return (
     <div className="mt-10 ml-5 pb-30">
       <form onSubmit={handleSubmitComment}>

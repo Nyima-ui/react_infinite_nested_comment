@@ -1,7 +1,4 @@
 
-
-
-
 export function toggleReplyingInTree(tree, commentId) {
     return tree.map((comment) => {
       if (comment.id === commentId) {
