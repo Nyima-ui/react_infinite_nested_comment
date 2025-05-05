@@ -5,6 +5,7 @@ import {
   addReplyToTree,
   toggleEditingInTree,
   editCommentToTree,
+  deleteCommentFromTree
 } from "../utils/commentTree";
 
 const Comment = ({ comment, setCommentsData }) => {
@@ -77,6 +78,10 @@ const Comment = ({ comment, setCommentsData }) => {
     clearInputState(type, id);
   };
 
+  const handleDelete = (commentId) => {
+    setCommentsData((prev) => deleteCommentFromTree(prev, commentId)); 
+  }
+
   return (
     <article key={comment.id} className="ml-10 my-2 border">
       <div className="bg-zinc-300  max-w-xs px-5 py-2 rounded-md">
@@ -137,7 +142,8 @@ const Comment = ({ comment, setCommentsData }) => {
               >
                 EDIT
               </button>
-              <button className="text-gray-500 font-bold cursor-pointer hover:text-gray-600">
+              <button className="text-gray-500 font-bold cursor-pointer hover:text-gray-600"
+                      onClick={() => handleDelete(comment.id)}>
                 DELETE
               </button>
             </div>

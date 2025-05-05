@@ -18,14 +18,14 @@ function updateCommentTree(tree, matchFn, updateFn) {
   });
 }
 
-export const toggleReplyingInTree = (tree, commentId) => 
+export const toggleReplyingInTree = (tree, commentId) =>
   updateCommentTree(
     tree,
     (comment) => comment.id === commentId,
     (comment) => ({ ...comment, replying: !comment.replying })
   );
 
-export const addReplyToTree = (tree, parentId, newReply) => 
+export const addReplyToTree = (tree, parentId, newReply) =>
   updateCommentTree(
     tree,
     (comment) => comment.id === parentId,
@@ -54,3 +54,14 @@ export const editCommentToTree = (tree, commentId, newText) =>
     })
   );
 
+export const deleteCommentFromTree = (tree, commentId) => {
+  return tree.filter((comment) => {
+    if (comment.id === commentId) {
+      return false;
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      comment.replies = deleteCommentFromTree(comment.replies, commentId);
+    }
+    return true;
+  });
+};
