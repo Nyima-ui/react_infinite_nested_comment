@@ -5,18 +5,17 @@ import Comments from "./components/Comments";
 function App() {
   const [commentText, setCommentText] = useState("");
   const [commentsData, setCommentsData] = useState([]);
-  const [replyInputs, setReplyInputs] = useState({});
 
-  //function to add a top level comment
   const handleSubmitComment = (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
     const newComment = {
       id: uuidv4(),
       parentId: null,
-      text: commentText,
+      text: commentText.trim(),
       replies: [],
       replying: false,
+      editing: false,
     };
     setCommentsData((prev) => [...prev, newComment]);
     setCommentText("");
@@ -25,15 +24,24 @@ function App() {
   const handleComment = (e) => {
     setCommentText(e.target.value);
   };
-  
-  useEffect(() => {
-    const storedData = localStorage.getItem('commentsData'); 
-    if(storedData) setCommentsData(JSON.parse(storedData)); 
-  }, []); 
 
   useEffect(() => {
-       localStorage.setItem('commentsData', JSON.stringify(commentsData)); 
-  }, [commentsData]); 
+    const storedData = localStorage.getItem("commentsData");
+    if (storedData) setCommentsData(JSON.parse(storedData));
+  }, []);
+
+  useEffect(() => {
+    if (commentsData) {
+      try {
+        localStorage.setItem("commentsData", JSON.stringify(commentsData));
+      } catch (error) {
+        console.error(
+          "Failed to stringfy comments data for local storage.",
+          error
+        );
+      }
+    }
+  }, [commentsData]);
   return (
     <div className="mt-10 ml-5 pb-30">
       <form onSubmit={handleSubmitComment}>
@@ -44,8 +52,12 @@ function App() {
           onChange={handleComment}
           value={commentText}
           required
+          aria-label="New comment text input"
         />
-        <button className="mx-3 bg-sky-400 text-white p-2 rounded-md cursor-pointer active:scale-85 transition-all duration-150">
+        <button
+          className="mx-3 bg-sky-400 text-white p-2 rounded-md cursor-pointer active:scale-85 transition-all duration-150"
+          type="submit"
+        >
           COMMENT
         </button>
       </form>
@@ -54,8 +66,6 @@ function App() {
         <Comments
           setCommentsData={setCommentsData}
           commentsData={commentsData}
-          replyInputs={replyInputs}
-          setReplyInputs={setReplyInputs}
         />
       </div>
     </div>

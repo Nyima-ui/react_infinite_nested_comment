@@ -1,9 +1,17 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { toggleReplyingInTree, addReplyToTree } from "../utils/commentTree";
+import {
+  toggleReplyingInTree,
+  addReplyToTree,
+  toggleEditingInTree,
+  editCommentToTree,
+} from "../utils/commentTree";
 
-const Comment = ({ comment, setCommentsData, replyInputs, setReplyInputs }) => {
+const Comment = ({ comment, setCommentsData }) => {
   const replyInputRef = useRef(null);
+  const editInputRef = useRef(null);
+  const [replyInputs, setReplyInputs] = useState({});
+  const [editInputs, setEditInputs] = useState({});
 
   useEffect(() => {
     if (comment.replying && replyInputRef.current) {
@@ -11,18 +19,41 @@ const Comment = ({ comment, setCommentsData, replyInputs, setReplyInputs }) => {
     }
   }, [comment.replying]);
 
+  useEffect(() => {
+    if (comment.editing && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [comment.editing]);
+
   const handleReplying = (commentId) => {
     setCommentsData((prev) => toggleReplyingInTree(prev, commentId));
+  };
+
+  const handleEditing = (commentId) => {
+    setCommentsData((prev) => toggleEditingInTree(prev, commentId));
   };
 
   const handleReplyChange = (commentId, text) => {
     setReplyInputs((prev) => ({ ...prev, [commentId]: text }));
   };
 
+  const handleEditChange = (commentId, text) => {
+    setEditInputs((prev) => ({ ...prev, [commentId]: text }));
+  };
+
   const handleCancelReply = (commentId) => {
     setCommentsData((prev) => toggleReplyingInTree(prev, commentId));
 
     setReplyInputs((prev) => {
+      const newState = { ...prev };
+      delete newState[commentId];
+      return newState;
+    });
+  };
+
+  const handleCancelEdit = (commentId) => {
+    setCommentsData((prev) => toggleEditingInTree(prev, commentId));
+    setEditInputs((prev) => {
       const newState = { ...prev };
       delete newState[commentId];
       return newState;
@@ -40,6 +71,7 @@ const Comment = ({ comment, setCommentsData, replyInputs, setReplyInputs }) => {
       text: replyText,
       replies: [],
       replying: false,
+      editing: false,
     };
 
     setCommentsData((prev) => addReplyToTree(prev, parentId, newReply));
@@ -50,31 +82,80 @@ const Comment = ({ comment, setCommentsData, replyInputs, setReplyInputs }) => {
       return newState;
     });
   };
+
+  const handleSaveEdit = (commentId, commentText) => {
+    const editedText = editInputs[commentId] || commentText;
+    if (!editedText || !editedText.trim()) return;
+    setCommentsData((prev) => editCommentToTree(prev, commentId, editedText));
+    setEditInputs((prev) => {
+      const newState = { ...prev };
+      delete newState[commentId];
+      return newState;
+    });
+  };
+
   return (
     <article key={comment.id} className="ml-10 my-2 border">
       <div className="bg-zinc-300  max-w-xs px-5 py-2 rounded-md">
-        <p>{comment.text}</p>
-        <div className="text-sm space-x-3 mt-3">
-          <button
-            className="text-gray-500 font-bold cursor-pointer hover:text-gray-600"
-            onClick={() => handleReplying(comment.id)}
-          >
-            <i
-              className="bi bi-triangle-fill text-xs mx-1 text-black transform inline-block"
-              style={{
-                transform: comment.replying ? "rotate(180deg)" : "rotate(0deg)",
-              }}
-            ></i>
-            REPLY
-          </button>
-          <button className="text-gray-500 font-bold cursor-pointer hover:text-gray-600">
-            EDIT
-          </button>
-          <button className="text-gray-500 font-bold cursor-pointer hover:text-gray-600">
-            DELETE
-          </button>
-        </div>
+        {comment.editing ? (
+          <>
+            <input
+              value={
+                editInputs[comment.id] !== undefined
+                  ? editInputs[comment.id]
+                  : comment.text
+              }
+              onChange={(e) => handleEditChange(comment.id, e.target.value)}
+              ref={editInputRef}
+              className="focus:outline-1 pl-1 rounded-sm py-0.5"
+            />
+            <div className="text-sm space-x-3 mt-3">
+              <button
+                className="text-gray-500 font-bold cursor-pointer hover:text-gray-600"
+                onClick={() => handleSaveEdit(comment.id, comment.text)}
+              >
+                SAVE
+              </button>
+              <button
+                className="text-gray-500 font-bold cursor-pointer hover:text-gray-600"
+                onClick={() => handleCancelEdit(comment.id)}
+              >
+                CANCEL
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p>{comment.text}</p>
+            <div className="text-sm space-x-3 mt-3">
+              <button
+                className="text-gray-500 font-bold cursor-pointer hover:text-gray-600"
+                onClick={() => handleReplying(comment.id)}
+              >
+                <i
+                  className="bi bi-triangle-fill text-xs mx-1 text-black transform inline-block"
+                  style={{
+                    transform: comment.replying
+                      ? "rotate(180deg)"
+                      : "rotate(0deg)",
+                  }}
+                ></i>
+                REPLY
+              </button>
+              <button
+                className="text-gray-500 font-bold cursor-pointer hover:text-gray-600"
+                onClick={() => handleEditing(comment.id)}
+              >
+                EDIT
+              </button>
+              <button className="text-gray-500 font-bold cursor-pointer hover:text-gray-600">
+                DELETE
+              </button>
+            </div>
+          </>
+        )}
       </div>
+
       {comment.replying && (
         <form
           className="mt-2 ml-10"
@@ -109,8 +190,6 @@ const Comment = ({ comment, setCommentsData, replyInputs, setReplyInputs }) => {
           <Comments
             setCommentsData={setCommentsData}
             commentsData={comment.replies}
-            replyInputs={replyInputs}
-            setReplyInputs={setReplyInputs}
           />
         </div>
       )}
@@ -118,12 +197,7 @@ const Comment = ({ comment, setCommentsData, replyInputs, setReplyInputs }) => {
   );
 };
 
-const Comments = ({
-  setCommentsData,
-  commentsData,
-  replyInputs,
-  setReplyInputs,
-}) => {
+const Comments = ({ setCommentsData, commentsData }) => {
   return (
     <>
       {commentsData.map((comment) => {
@@ -132,8 +206,6 @@ const Comments = ({
             key={comment.id}
             comment={comment}
             setCommentsData={setCommentsData}
-            replyInputs={replyInputs}
-            setReplyInputs={setReplyInputs}
           />
         );
       })}
