@@ -1,97 +1,56 @@
+function updateCommentTree(tree, matchFn, updateFn) {
+  return tree.map((comment) => {
+    if (matchFn(comment)) {
+      return updateFn(comment);
+    }
+    if (comment.replies?.length) {
+      const updatedReplies = updateCommentTree(
+        comment.replies,
+        matchFn,
+        updateFn
+      );
+      if (updatedReplies !== comment.replies) {
+        return { ...comment, replies: updatedReplies };
+      }
+    }
 
-export function toggleReplyingInTree(tree, commentId) {
-    return tree.map((comment) => {
-      if (comment.id === commentId) {
-        return {
-          ...comment,
-          replying: !comment.replying,
-        };
-      }
-  
-      if (comment.replies && comment.replies.length > 0) {
-        const updatedReplies = toggleReplyingInTree(comment.replies, commentId);
-        if (updatedReplies !== comment.replies) {
-          return {
-            ...comment,
-            replies: updatedReplies,
-          };
-        }
-      }
-  
-      return comment;
-    });
-  }
+    return comment;
+  });
+}
 
+export const toggleReplyingInTree = (tree, commentId) => 
+  updateCommentTree(
+    tree,
+    (comment) => comment.id === commentId,
+    (comment) => ({ ...comment, replying: !comment.replying })
+  );
 
- export function addReplyToTree(tree, parentId, newReply) {
-    return tree.map((comment) => {
-      if (comment.id === parentId) {
-        return {
-          ...comment,
-          replies: [...comment.replies, newReply],
-          replying: false,
-        };
-      }
-      if (comment.replies && comment.replies.length > 0) {
-        const updatedReplies = addReplyToTree(
-          comment.replies,
-          parentId,
-          newReply
-        );
-        if (updatedReplies !== comment.replies) {
-          return {
-            ...comment,
-            replies: updatedReplies,
-          };
-        }
-      }
-      return comment;
-    });
-  }
+export const addReplyToTree = (tree, parentId, newReply) => 
+  updateCommentTree(
+    tree,
+    (comment) => comment.id === parentId,
+    (comment) => ({
+      ...comment,
+      replies: [...comment.replies, newReply],
+      replying: false,
+    })
+  );
 
-  export function toggleEditingInTree(tree, commentId) {
-    return tree.map((comment) => {
-      if (comment.id === commentId) {
-        return {
-          ...comment,
-          editing: !comment.editing,
-        };
-      }
-  
-      if (comment.replies && comment.replies.length > 0) {
-        const updatedReplies = toggleEditingInTree(comment.replies, commentId);
-        if (updatedReplies !== comment.replies) {
-          return {
-            ...comment,
-            replies: updatedReplies,
-          };
-        }
-      }
-  
-      return comment;
-    });
-  }
+export const toggleEditingInTree = (tree, commentId) =>
+  updateCommentTree(
+    tree,
+    (comment) => comment.id === commentId,
+    (comment) => ({ ...comment, editing: !comment.editing })
+  );
 
+export const editCommentToTree = (tree, commentId, newText) =>
+  updateCommentTree(
+    tree,
+    (comment) => comment.id === commentId,
+    (comment) => ({
+      ...comment,
+      text: newText,
+      editing: false,
+    })
+  );
 
-
-  export const editCommentToTree = (comments, commentId, newText) => {
-    return comments.map((comment) => {
-      if (comment.id === commentId) {
-        return {
-          ...comment,
-          text: newText,
-          editing: false, 
-        };
-      }
-  
-      if (comment.replies && comment.replies.length > 0) {
-        return {
-          ...comment,
-          replies: editCommentToTree(comment.replies, commentId, newText),
-        };
-      }
-  
-      return comment;
-    });
-  };
-  
